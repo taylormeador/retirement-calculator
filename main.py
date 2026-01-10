@@ -70,10 +70,18 @@ class RetirementSimulation:
             "withdrawals": [],
             "parttime_income": [],
             "inflation_rates": [],
+            "stocks_values": [],
+            "bonds_values": [],
+            "cash_values": [],
             "success": True,
         }
 
-        current_portfolio = self.params["starting_portfolio"]
+        # Initialize portfolio with target allocation
+        total_portfolio = self.params["starting_portfolio"]
+        stocks_value = total_portfolio * self.params["target_allocation"]["stocks"]
+        bonds_value = total_portfolio * self.params["target_allocation"]["bonds"]
+        cash_value = total_portfolio * self.params["target_allocation"]["cash"]
+
         cumulative_inflation = 1.0
         peak_portfolio_real = self.params[
             "starting_portfolio"
@@ -81,6 +89,8 @@ class RetirementSimulation:
 
         for year in range(self.params["simulation_years"]):
             age = self.params["retirement_age"] + year
+            current_portfolio = stocks_value + bonds_value + cash_value
+
             results["years"].append(year)
             results["ages"].append(age)
             results["portfolio_values_start"].append(current_portfolio)
@@ -90,30 +100,33 @@ class RetirementSimulation:
                 self.params["annual_spending"] * cumulative_inflation
             )
 
-            # 2. Withdraw spending from portfolio
-            current_portfolio -= inflation_adjusted_spending
+            # 2. Withdraw spending from portfolio (proportionally from each asset)
+            if current_portfolio > 0:
+                withdrawal_fraction = inflation_adjusted_spending / current_portfolio
+                stocks_value *= 1 - withdrawal_fraction
+                bonds_value *= 1 - withdrawal_fraction
+                cash_value *= 1 - withdrawal_fraction
+
             results["withdrawals"].append(inflation_adjusted_spending)
 
             # 3. Generate returns for this year
             annual_returns = self.portfolio.generate_annual_returns(n_samples=1)[0]
-            asset_returns = annual_returns[:3]  # stocks, bonds, cash
+            stock_return = annual_returns[0]
+            bond_return = annual_returns[1]
+            cash_return = annual_returns[2]
             inflation_rate = annual_returns[3]
             results["inflation_rates"].append(inflation_rate)
 
             # Update cumulative inflation
             cumulative_inflation *= 1 + inflation_rate
 
-            # 4. Apply returns to post-withdrawal portfolio
-            # Calculate weighted return based on current allocation
-            weights = np.array(
-                [
-                    self.params["target_allocation"]["stocks"],
-                    self.params["target_allocation"]["bonds"],
-                    self.params["target_allocation"]["cash"],
-                ]
-            )
-            portfolio_return = np.dot(asset_returns, weights)
-            current_portfolio *= 1 + portfolio_return
+            # 4. Apply returns to each asset class independently
+            stocks_value *= 1 + stock_return
+            bonds_value *= 1 + bond_return
+            cash_value *= 1 + cash_return
+
+            # Portfolio value after returns, before rebalancing
+            current_portfolio = stocks_value + bonds_value + cash_value
 
             # 5. Check if part-time income is needed
             parttime_income = 0
@@ -142,11 +155,43 @@ class RetirementSimulation:
                             self.params["parttime_annual_income"] * cumulative_inflation
                         )
 
-            current_portfolio += parttime_income
+            # Add part-time income proportionally to each asset class
+            if current_portfolio > 0:
+                income_fraction = parttime_income / current_portfolio
+                stocks_value *= (
+                    1 + income_fraction * self.params["target_allocation"]["stocks"]
+                )
+                bonds_value *= (
+                    1 + income_fraction * self.params["target_allocation"]["bonds"]
+                )
+                cash_value *= (
+                    1 + income_fraction * self.params["target_allocation"]["cash"]
+                )
+            else:
+                # If portfolio is depleted, add income according to target allocation
+                stocks_value += (
+                    parttime_income * self.params["target_allocation"]["stocks"]
+                )
+                bonds_value += (
+                    parttime_income * self.params["target_allocation"]["bonds"]
+                )
+                cash_value += parttime_income * self.params["target_allocation"]["cash"]
+
             results["parttime_income"].append(parttime_income)
 
-            # 6. Rebalancing happens automatically by using target allocation for next year's returns
-            # (In reality, this is implicitly handled by always using target_allocation weights)
+            # Recalculate portfolio after part-time income
+            current_portfolio = stocks_value + bonds_value + cash_value
+
+            # 6. Rebalance to target allocation
+            stocks_value = (
+                current_portfolio * self.params["target_allocation"]["stocks"]
+            )
+            bonds_value = current_portfolio * self.params["target_allocation"]["bonds"]
+            cash_value = current_portfolio * self.params["target_allocation"]["cash"]
+
+            results["stocks_values"].append(stocks_value)
+            results["bonds_values"].append(bonds_value)
+            results["cash_values"].append(cash_value)
 
             # Update peak portfolio (in real terms)
             current_portfolio_real = current_portfolio / cumulative_inflation
@@ -155,7 +200,7 @@ class RetirementSimulation:
 
             results["portfolio_values_end"].append(current_portfolio)
 
-            # Check if we've run out of money (though we continue simulation even if negative)
+            # Check if we've run out of money
             if current_portfolio <= 0 and results["success"]:
                 results["success"] = False
 
@@ -192,10 +237,12 @@ def main():
         if i < len(results["years"]):
             print(
                 f"Age {results['ages'][i]}: "
-                f"Portfolio=${results['portfolio_values_end'][i]:,.0f}, "
+                f"Total=${results['portfolio_values_end'][i]:,.0f} "
+                f"(S=${results['stocks_values'][i]:,.0f}, "
+                f"B=${results['bonds_values'][i]:,.0f}, "
+                f"C=${results['cash_values'][i]:,.0f}), "
                 f"Withdrawal=${results['withdrawals'][i]:,.0f}, "
-                f"Part-time=${results['parttime_income'][i]:,.0f}, "
-                f"Inflation={results['inflation_rates'][i]:.1%}"
+                f"Part-time=${results['parttime_income'][i]:,.0f}"
             )
 
     print(f"\nFinal portfolio: ${results['portfolio_values_end'][-1]:,.0f}")
