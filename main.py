@@ -191,6 +191,187 @@ class RetirementSimulation:
         return results
 
 
+class MonteCarloSimulation:
+    def __init__(self, portfolio, params):
+        """
+        portfolio: Portfolio instance
+        params: same as RetirementSimulation params
+        """
+        self.portfolio = portfolio
+        self.params = params
+
+    def run(self, n_simulations=10000):
+        """
+        Run Monte Carlo simulation with n_simulations independent trials.
+
+        Returns:
+            all_simulations: list of individual simulation results
+            summary: dict of aggregated statistics
+        """
+        all_simulations = []
+
+        print(f"Running {n_simulations} Monte Carlo simulations...")
+
+        for i in range(n_simulations):
+            if (i + 1) % 1000 == 0:
+                print(f"  Completed {i + 1}/{n_simulations} simulations")
+
+            sim = RetirementSimulation(self.portfolio, self.params)
+            results = sim.simulate_single_retirement()
+            all_simulations.append(results)
+
+        print(
+            f"Completed all {n_simulations} simulations. Computing summary statistics...\n"
+        )
+
+        # Compute summary statistics
+        summary = self._compute_summary(all_simulations)
+
+        return all_simulations, summary
+
+    def _compute_summary(self, all_simulations):
+        """Compute aggregate statistics across all simulations"""
+        n_sims = len(all_simulations)
+
+        # Success rate
+        successes = sum(1 for sim in all_simulations if sim["success"])
+        success_rate = successes / n_sims
+
+        # Final portfolio values
+        final_portfolios = [sim["portfolio_values_end"][-1] for sim in all_simulations]
+        final_portfolios_sorted = sorted(final_portfolios)
+
+        # Years of part-time work
+        years_working = [
+            sum(1 for income in sim["parttime_income"] if income > 0)
+            for sim in all_simulations
+        ]
+
+        # Probability of working at all
+        prob_any_work = sum(1 for years in years_working if years > 0) / n_sims
+
+        # Portfolio value over time (median and percentiles for each year)
+        n_years = self.params["simulation_years"]
+        portfolio_over_time = {
+            "median": [],
+            "p10": [],  # 10th percentile (bad outcomes)
+            "p25": [],
+            "p75": [],
+            "p90": [],  # 90th percentile (good outcomes)
+        }
+
+        for year in range(n_years):
+            values_this_year = [
+                sim["portfolio_values_end"][year] for sim in all_simulations
+            ]
+            portfolio_over_time["median"].append(np.median(values_this_year))
+            portfolio_over_time["p10"].append(np.percentile(values_this_year, 10))
+            portfolio_over_time["p25"].append(np.percentile(values_this_year, 25))
+            portfolio_over_time["p75"].append(np.percentile(values_this_year, 75))
+            portfolio_over_time["p90"].append(np.percentile(values_this_year, 90))
+
+        # Age at portfolio depletion (for failed scenarios)
+        depletion_ages = []
+        for sim in all_simulations:
+            if not sim["success"]:
+                # Find first year where portfolio hit 0
+                for i, value in enumerate(sim["portfolio_values_end"]):
+                    if value <= 0:
+                        depletion_ages.append(sim["ages"][i])
+                        break
+
+        summary = {
+            "n_simulations": n_sims,
+            "success_rate": success_rate,
+            "failure_rate": 1 - success_rate,
+            # Final portfolio statistics
+            "final_portfolio": {
+                "median": np.median(final_portfolios),
+                "mean": np.mean(final_portfolios),
+                "p10": np.percentile(final_portfolios, 10),
+                "p25": np.percentile(final_portfolios, 25),
+                "p75": np.percentile(final_portfolios, 75),
+                "p90": np.percentile(final_portfolios, 90),
+                "min": min(final_portfolios),
+                "max": max(final_portfolios),
+            },
+            # Part-time work statistics
+            "years_working": {
+                "median": np.median(years_working),
+                "mean": np.mean(years_working),
+                "max": max(years_working),
+                "p90": np.percentile(years_working, 90),
+            },
+            "prob_any_parttime_work": prob_any_work,
+            # Portfolio trajectory over time
+            "portfolio_over_time": portfolio_over_time,
+            # Failure statistics
+            "depletion_age": {
+                "median": np.median(depletion_ages) if depletion_ages else None,
+                "mean": np.mean(depletion_ages) if depletion_ages else None,
+                "earliest": min(depletion_ages) if depletion_ages else None,
+            },
+        }
+
+        return summary
+
+
+def print_summary(summary, params):
+    """Pretty print the Monte Carlo summary statistics"""
+    print("=" * 70)
+    print("MONTE CARLO SIMULATION SUMMARY")
+    print("=" * 70)
+    print(f"Number of simulations: {summary['n_simulations']:,}")
+    print(f"Retirement age: {params['retirement_age']}")
+    print(f"Starting portfolio: ${params['starting_portfolio']:,.0f}")
+    print(f"Annual spending: ${params['annual_spending']:,.0f}")
+    print(f"Target allocation: {params['target_allocation']}")
+    print()
+
+    print("-" * 70)
+    print("SUCCESS METRICS")
+    print("-" * 70)
+    print(f"Success rate: {summary['success_rate']:.1%}")
+    print(f"Failure rate: {summary['failure_rate']:.1%}")
+    print()
+
+    print("-" * 70)
+    print("FINAL PORTFOLIO VALUE")
+    print("-" * 70)
+    fp = summary["final_portfolio"]
+    print(f"Median:  ${fp['median']:,.0f}")
+    print(f"Mean:    ${fp['mean']:,.0f}")
+    print(f"10th %:  ${fp['p10']:,.0f}")
+    print(f"90th %:  ${fp['p90']:,.0f}")
+    print(f"Min:     ${fp['min']:,.0f}")
+    print(f"Max:     ${fp['max']:,.0f}")
+    print()
+
+    print("-" * 70)
+    print("PART-TIME WORK")
+    print("-" * 70)
+    print(
+        f"Probability of needing part-time work: {summary['prob_any_parttime_work']:.1%}"
+    )
+    yw = summary["years_working"]
+    print(f"Years of work (median): {yw['median']:.1f}")
+    print(f"Years of work (mean):   {yw['mean']:.1f}")
+    print(f"Years of work (max):    {yw['max']:.0f}")
+    print(f"Years of work (90th%):  {yw['p90']:.1f}")
+    print()
+
+    if summary["depletion_age"]["median"]:
+        print("-" * 70)
+        print("FAILURE SCENARIOS (Portfolio Depletion)")
+        print("-" * 70)
+        da = summary["depletion_age"]
+        print(f"Median depletion age: {da['median']:.0f}")
+        print(f"Earliest depletion:   {da['earliest']:.0f}")
+        print()
+
+    print("=" * 70)
+
+
 def main():
     portfolio = Portfolio()
 
@@ -208,38 +389,27 @@ def main():
         "ss_annual_benefit": 15000,  # In today's dollars
     }
 
-    sim = RetirementSimulation(portfolio, params)
-    results = sim.simulate_single_retirement()
+    # Run Monte Carlo simulation
+    mc = MonteCarloSimulation(portfolio, params)
+    all_simulations, summary = mc.run(n_simulations=10000)
 
-    # Print sample results
-    print(
-        f"Retirement simulation: Age {params['retirement_age']} to {params['retirement_age'] + params['simulation_years'] - 1}"
-    )
-    print(f"Starting portfolio: ${params['starting_portfolio']:,.0f}")
-    print(f"Annual spending: ${params['annual_spending']:,.0f}")
-    print(
-        f"SS benefit (starts age {params['ss_start_age']}): ${params['ss_annual_benefit']:,.0f}\n"
-    )
+    # Print summary
+    print_summary(summary, params)
 
-    print("Sample years:")
-    for i in [0, 9, 16, 19, 29, 39]:  # Include year when SS starts (age 67 = year 17)
-        if i < len(results["years"]):
-            print(
-                f"Age {results['ages'][i]}: "
-                f"Portfolio=${results['portfolio_values_end'][i]:,.0f}, "
-                f"Need=${results['spending_need'][i]:,.0f}, "
-                f"SS=${results['ss_income'][i]:,.0f}, "
-                f"Part-time=${results['parttime_income'][i]:,.0f}, "
-                f"Withdrawal=${results['net_withdrawals'][i]:,.0f} "
-                f"({results['withdrawal_rates'][i]:.1%})"
-            )
+    # Example: Show portfolio trajectory over time
+    print("\nPORTFOLIO VALUE TRAJECTORY (selected years)")
+    print("-" * 70)
+    print(f"{'Age':<6} {'Year':<6} {'10th %':<15} {'Median':<15} {'90th %':<15}")
+    print("-" * 70)
 
-    print(f"\nFinal portfolio: ${results['portfolio_values_end'][-1]:,.0f}")
-    print(f"Success: {results['success']}")
-
-    # Calculate total years of part-time work
-    years_worked = sum(1 for income in results["parttime_income"] if income > 0)
-    print(f"Years of part-time work needed: {years_worked}")
+    years_to_show = [0, 5, 10, 15, 17, 20, 30, 39]  # Include year 17 (when SS starts)
+    for year in years_to_show:
+        if year < len(summary["portfolio_over_time"]["median"]):
+            age = params["retirement_age"] + year
+            p10 = summary["portfolio_over_time"]["p10"][year]
+            median = summary["portfolio_over_time"]["median"][year]
+            p90 = summary["portfolio_over_time"]["p90"][year]
+            print(f"{age:<6} {year:<6} ${p10:<14,.0f} ${median:<14,.0f} ${p90:<14,.0f}")
 
 
 if __name__ == "__main__":
