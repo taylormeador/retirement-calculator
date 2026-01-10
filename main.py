@@ -53,9 +53,11 @@ class RetirementSimulation:
             - retirement_age: int (e.g., 50)
             - simulation_years: int (e.g., 40)
             - enable_parttime_income: bool
-            - parttime_trigger_type: str ('peak_percent' | 'starting_percent')
-            - parttime_trigger_threshold: float (e.g., 0.80)
+            - parttime_max_age: int (e.g., 65 - don't work past this age)
+            - parttime_withdrawal_rate_threshold: float (e.g., 0.075 - trigger if WR exceeds this)
             - parttime_annual_income: float (e.g., 25000)
+            - ss_start_age: int (e.g., 67)
+            - ss_annual_benefit: float (e.g., 30000 in today's dollars)
         """
         self.portfolio = portfolio
         self.params = params
@@ -69,7 +71,9 @@ class RetirementSimulation:
             "portfolio_values_end": [],
             "spending_need": [],
             "parttime_income": [],
+            "ss_income": [],
             "net_withdrawals": [],
+            "withdrawal_rates": [],
             "inflation_rates": [],
             "stocks_values": [],
             "bonds_values": [],
@@ -84,9 +88,6 @@ class RetirementSimulation:
         cash_value = total_portfolio * self.params["target_allocation"]["cash"]
 
         cumulative_inflation = 1.0
-        peak_portfolio_real = self.params[
-            "starting_portfolio"
-        ]  # For peak_percent trigger
 
         for year in range(self.params["simulation_years"]):
             age = self.params["retirement_age"] + year
@@ -102,47 +103,57 @@ class RetirementSimulation:
             )
             results["spending_need"].append(inflation_adjusted_spending)
 
-            # 2. Check if part-time income is needed
+            # 2. Calculate Social Security income (starts at ss_start_age, inflation-adjusted)
+            ss_income = 0
+            if age >= self.params["ss_start_age"]:
+                ss_income = self.params["ss_annual_benefit"] * cumulative_inflation
+            results["ss_income"].append(ss_income)
+
+            # 3. Calculate how much we'd need to withdraw before considering part-time work
+            preliminary_withdrawal = max(0, inflation_adjusted_spending - ss_income)
+
+            # 4. Check if part-time income is needed (withdrawal rate trigger + age cap)
             parttime_income = 0
-            if self.params["enable_parttime_income"]:
-                trigger_threshold = self.params["parttime_trigger_threshold"]
+            if (
+                self.params["enable_parttime_income"]
+                and age <= self.params["parttime_max_age"]
+                and current_portfolio > 0
+            ):
 
-                # Adjust peak for inflation to compare in real terms
-                peak_portfolio_real_adjusted = (
-                    peak_portfolio_real * cumulative_inflation
-                )
+                # Calculate what withdrawal rate would be without part-time work
+                projected_withdrawal_rate = preliminary_withdrawal / current_portfolio
 
-                if self.params["parttime_trigger_type"] == "peak_percent":
-                    if (
-                        current_portfolio
-                        < peak_portfolio_real_adjusted * trigger_threshold
-                    ):
-                        parttime_income = (
-                            self.params["parttime_annual_income"] * cumulative_inflation
-                        )
-                elif self.params["parttime_trigger_type"] == "starting_percent":
-                    starting_adjusted = (
-                        self.params["starting_portfolio"] * cumulative_inflation
+                if (
+                    projected_withdrawal_rate
+                    > self.params["parttime_withdrawal_rate_threshold"]
+                ):
+                    parttime_income = (
+                        self.params["parttime_annual_income"] * cumulative_inflation
                     )
-                    if current_portfolio < starting_adjusted * trigger_threshold:
-                        parttime_income = (
-                            self.params["parttime_annual_income"] * cumulative_inflation
-                        )
 
             results["parttime_income"].append(parttime_income)
 
-            # 3. Calculate net withdrawal from portfolio (spending minus part-time income)
-            net_withdrawal = max(0, inflation_adjusted_spending - parttime_income)
+            # 5. Calculate actual net withdrawal from portfolio
+            net_withdrawal = max(
+                0, inflation_adjusted_spending - ss_income - parttime_income
+            )
             results["net_withdrawals"].append(net_withdrawal)
 
-            # 4. Withdraw net amount from portfolio (proportionally from each asset)
+            # Calculate actual withdrawal rate
             if current_portfolio > 0:
+                actual_withdrawal_rate = net_withdrawal / current_portfolio
+            else:
+                actual_withdrawal_rate = 0
+            results["withdrawal_rates"].append(actual_withdrawal_rate)
+
+            # 6. Withdraw net amount from portfolio (proportionally from each asset)
+            if current_portfolio > 0 and net_withdrawal > 0:
                 withdrawal_fraction = net_withdrawal / current_portfolio
                 stocks_value *= 1 - withdrawal_fraction
                 bonds_value *= 1 - withdrawal_fraction
                 cash_value *= 1 - withdrawal_fraction
 
-            # 5. Generate returns for this year
+            # 7. Generate returns for this year
             annual_returns = self.portfolio.generate_annual_returns(n_samples=1)[0]
             stock_return = annual_returns[0]
             bond_return = annual_returns[1]
@@ -153,7 +164,7 @@ class RetirementSimulation:
             # Update cumulative inflation
             cumulative_inflation *= 1 + inflation_rate
 
-            # 6. Apply returns to each asset class independently
+            # 8. Apply returns to each asset class independently
             stocks_value *= 1 + stock_return
             bonds_value *= 1 + bond_return
             cash_value *= 1 + cash_return
@@ -161,7 +172,7 @@ class RetirementSimulation:
             # Portfolio value after returns, before rebalancing
             current_portfolio = stocks_value + bonds_value + cash_value
 
-            # 7. Rebalance to target allocation
+            # 9. Rebalance to target allocation
             stocks_value = (
                 current_portfolio * self.params["target_allocation"]["stocks"]
             )
@@ -171,12 +182,6 @@ class RetirementSimulation:
             results["stocks_values"].append(stocks_value)
             results["bonds_values"].append(bonds_value)
             results["cash_values"].append(cash_value)
-
-            # Update peak portfolio (in real terms)
-            current_portfolio_real = current_portfolio / cumulative_inflation
-            if current_portfolio_real > peak_portfolio_real:
-                peak_portfolio_real = current_portfolio_real
-
             results["portfolio_values_end"].append(current_portfolio)
 
             # Check if we've run out of money
@@ -196,9 +201,11 @@ def main():
         "retirement_age": 50,
         "simulation_years": 40,
         "enable_parttime_income": True,
-        "parttime_trigger_type": "peak_percent",
-        "parttime_trigger_threshold": 0.80,
+        "parttime_max_age": 65,
+        "parttime_withdrawal_rate_threshold": 0.075,  # 7.5%
         "parttime_annual_income": 25000,
+        "ss_start_age": 67,
+        "ss_annual_benefit": 15000,  # In today's dollars
     }
 
     sim = RetirementSimulation(portfolio, params)
@@ -209,20 +216,22 @@ def main():
         f"Retirement simulation: Age {params['retirement_age']} to {params['retirement_age'] + params['simulation_years'] - 1}"
     )
     print(f"Starting portfolio: ${params['starting_portfolio']:,.0f}")
-    print(f"Annual spending: ${params['annual_spending']:,.0f}\n")
+    print(f"Annual spending: ${params['annual_spending']:,.0f}")
+    print(
+        f"SS benefit (starts age {params['ss_start_age']}): ${params['ss_annual_benefit']:,.0f}\n"
+    )
 
     print("Sample years:")
-    for i in [0, 9, 19, 29, 39]:  # Years 1, 10, 20, 30, 40
+    for i in [0, 9, 16, 19, 29, 39]:  # Include year when SS starts (age 67 = year 17)
         if i < len(results["years"]):
             print(
                 f"Age {results['ages'][i]}: "
-                f"Portfolio=${results['portfolio_values_end'][i]:,.0f} "
-                f"(S=${results['stocks_values'][i]:,.0f}, "
-                f"B=${results['bonds_values'][i]:,.0f}, "
-                f"C=${results['cash_values'][i]:,.0f}), "
+                f"Portfolio=${results['portfolio_values_end'][i]:,.0f}, "
                 f"Need=${results['spending_need'][i]:,.0f}, "
+                f"SS=${results['ss_income'][i]:,.0f}, "
                 f"Part-time=${results['parttime_income'][i]:,.0f}, "
-                f"Withdrawal=${results['net_withdrawals'][i]:,.0f}"
+                f"Withdrawal=${results['net_withdrawals'][i]:,.0f} "
+                f"({results['withdrawal_rates'][i]:.1%})"
             )
 
     print(f"\nFinal portfolio: ${results['portfolio_values_end'][-1]:,.0f}")
