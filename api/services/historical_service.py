@@ -15,30 +15,20 @@ from api.models.historical import (
 class HistoricalDataService:
     """Service for loading and querying historical return data"""
 
-    def __init__(self, data_path: str = "data/historical_returns.csv"):
+    def __init__(self, data_path: str = "api/data/shiller.csv"):
         """
         Initialize with historical data.
         """
         self.data_path = data_path
-        self.df = None
-        self._load_data()
+        self.df = self._load_data()
 
     def _load_data(self):
         """Load historical data from CSV"""
         try:
-            # TODO: Replace with actual Shiller data
-            # For now, create dummy data
-            self.df = pd.DataFrame(
-                {
-                    "year": range(1926, 2025),
-                    "stocks": np.random.normal(0.10, 0.18, 99),
-                    "bonds": np.random.normal(0.04, 0.06, 99),
-                    "cash": np.random.normal(0.025, 0.005, 99),
-                    "inflation": np.random.normal(0.025, 0.025, 99),
-                }
-            )
+            df = pd.read_csv(self.data_path)
+            return df
         except FileNotFoundError:
-            # TODO: Handle missing data file
+            # TODO handle this
             raise
 
     def get_returns(
