@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Return Distribution Assumptions Affect Safe Withdrawal Rates</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fafafa;
+            padding: 20px;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px 60px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Typography */
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 0.3em;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+        
+        h2 {
+            font-size: 1.6em;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.3em;
+        }
+        
+        h3 {
+            font-size: 1.3em;
+            margin-top: 1.2em;
+            margin-bottom: 0.5em;
+            color: #34495e;
+        }
+        
+        p {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+        
+        /* Metadata */
+        .metadata {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 2em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5em 0;
+            font-size: 0.95em;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        td {
+            text-align: center;
+        }
+        
+        td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        /* Chart containers */
+        .chart {
+            margin: 2em 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .chart-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 1em;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .chart-placeholder {
+            background-color: #ecf0f1;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #95a5a6;
+            font-style: italic;
+            border-radius: 4px;
+        }
+        
+        /* Key findings box */
+        .key-findings {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 1.5em;
+            margin: 2em 0;
+        }
+        
+        .key-findings h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        
+        .key-findings ul {
+            margin-left: 1.5em;
+            margin-top: 0.5em;
+        }
+        
+        .key-findings li {
+            margin-bottom: 0.5em;
+        }
+        
+        /* Methodology box */
+        .methodology {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1.5em;
+            margin: 2em 0;
+            font-size: 0.95em;
+        }
+        
+        .methodology h3 {
+            margin-top: 0;
+        }
+        
+        /* Code blocks (for parameters) */
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin-left: 2em;
+            margin-bottom: 1em;
+        }
+        
+        li {
+            margin-bottom: 0.3em;
+        }
+        
+        /* Links */
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 3em;
+            padding-top: 1.5em;
+            border-top: 1px solid #ecf0f1;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 30px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            h2 {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>How Return Distribution Assumptions Affect Safe Withdrawal Rates</h1>
+        
+        <div class="metadata">
+            <p>Published: [Date] | Reading time: ~8 minutes</p>
+        </div>
+        
+        <h2>Introduction</h2>
+        <p>
+            Most retirement calculators assume that stock and bond returns follow a normal distribution. 
+            This is mathematically convenient but may not reflect reality. Markets experience crashes more 
+            often than normal distributions predict (fat tails), and returns may exhibit mean reversion 
+            (bad years followed by good years). How much do these assumptions actually matter for retirement planning?
+        </p>
+        
+        <p>
+            I compared four different approaches to modeling investment returns and calculated safe withdrawal 
+            rates for each. The results show that [your findings will go here].
+        </p>
+        
+        <div class="key-findings">
+            <h3>Key Findings</h3>
+            <ul>
+                <li>[Finding 1: e.g., "Fat-tailed returns increase failure rates by X% at the 4% withdrawal rate"]</li>
+                <li>[Finding 2: e.g., "Mean reversion reduces failure rates, suggesting higher SWRs may be safe"]</li>
+                <li>[Finding 3: e.g., "Historical bootstrap results align closely with normal distribution"]</li>
+            </ul>
+        </div>
+        
+        <h2>Methodology</h2>
+        
+        <div class="methodology">
+            <h3>Simulation Parameters</h3>
+            <p><strong>Portfolio:</strong> 60% stocks / 40% bonds</p>
+            <p><strong>Time Horizon:</strong> 30 years</p>
+            <p><strong>Returns:</strong> Real (inflation-adjusted)</p>
+            <p><strong>Simulations:</strong> 10,000 per scenario</p>
+            <p><strong>Withdrawal Rates Tested:</strong> 3.0%, 3.5%, 4.0%, 4.5%, 5.0%</p>
+            
+            <h3>Return Parameters</h3>
+            <ul>
+                <li><strong>Stocks:</strong> μ = 7% (real), σ = 20%</li>
+                <li><strong>Bonds:</strong> μ = 2% (real), σ = 6%</li>
+                <li><strong>Correlation:</strong> ρ = -0.167</li>
+            </ul>
+        </div>
+        
+        <h3>Four Return Models</h3>
+        
+        <p><strong>1. Normal Distribution (Baseline)</strong></p>
+        <p>
+            The standard assumption in most retirement calculators. Returns follow a multivariate normal 
+            distribution with parameters based on historical averages.
+        </p>
+        
+        <p><strong>2. Fat-Tailed Distribution (Student's t)</strong></p>
+        <p>
+            Uses a Student's t-distribution with 5 degrees of freedom to capture more frequent extreme events. 
+            This better reflects historical market crashes and booms that are "impossible" under normal assumptions.
+        </p>
+        
+        <p><strong>3. Mean Reversion (AR(1) Process)</strong></p>
+        <p>
+            Models returns with negative autocorrelation (φ = -0.3), meaning poor returns tend to be followed 
+            by better-than-average returns. This reflects the hypothesis that markets revert to their long-term mean.
+        </p>
+        
+        <p><strong>4. Historical Bootstrap</strong></p>
+        <p>
+            Randomly samples actual historical returns (1926-2023), preserving all empirical properties including 
+            correlation structure, fat tails, and any serial correlation present in the data.
+        </p>
+        
+        <h2>Results</h2>
+        
+        <h3>Failure Rates by Withdrawal Rate and Model</h3>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>3.0%</th>
+                    <th>3.5%</th>
+                    <th>4.0%</th>
+                    <th>4.5%</th>
+                    <th>5.0%</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Normal</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                </tr>
+                <tr>
+                    <td>Fat-Tailed (t)</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                </tr>
+                <tr>
+                    <td>Mean Reversion</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                </tr>
+                <tr>
+                    <td>Historical Bootstrap</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="chart">
+            <div class="chart-title">Failure Rates Across Withdrawal Rates</div>
+            <html>
+<head><meta charset="utf-8" /></head>
+<body>
+    <div>                        <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.3.1.min.js" integrity="sha256-4rD3fugVb/nVJYUv5Ky3v+fYXoouHaBSP20WIJuEiWg=" crossorigin="anonymous"></script>                <div id="chart1" class="plotly-graph-div" style="height:400px; width:100%;"></div>            <script type="text/javascript">                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("chart1")) {                    Plotly.newPlot(                        "chart1",                        [{"hoverinfo":"skip","line":{"width":0},"mode":"lines","showlegend":false,"x":{"dtype":"i1","bdata":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwd"},"y":{"dtype":"f8","bdata":"jMThJ24vKkFHIJdaX0ssQVeMpb5E1C1BWEGO3r8mL0EtSdHL+yswQU9Gep4V5TBBsJZy72puMUE\u002fUDRj2RAyQUqcgz9QwzJBbK5ySk95M0HcGbYMIDk0QSDSwoGV4zRBuUZd0vqCNUFeTfR72Eo2QcNWGUCwBTdBLTRhddfCN0HLrVDGo4E4QR3QLNSIVDlBhcnkimNeOkHZ2CIRdQE7QVt7TmRpsTtBTMfaq3LUPEHvv\u002fsnqLE9QdKYtcMFkj5B0y2yFcqbP0HDByMCZjlAQVfjmvBp1EBB7FLlg4NNQUFTeUfwNcNBQQp04Az\u002fikJB"},"type":"scatter"},{"fill":"tonexty","fillcolor":"rgba(68, 138, 255, 0.2)","hovertemplate":"Year %{x}\u003cbr\u003e10th-90th: $%{y:,.0f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"width":0},"mode":"lines","name":"10th-90th percentile","x":{"dtype":"i1","bdata":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwd"},"y":{"dtype":"f8","bdata":"JRkfBo\u002f9IkGMQ0kwja8hQckvXJaGvSBBL1V12KN6H0GkVz3XN9sdQQtYhhmgUhxBGM\u002fQW8XIGkE4Qsxk\u002fS0ZQZjMPTJeWRdB99AKWU0JFkGf+aC2TW0UQYV\u002feg\u002fz6xJBCy0bBnt2EUGteimWA+EPQQkpVx7w4QxBcjDtyQm0CUGrCr\u002fD3mwGQSjE5zb9RANBdYmqHAoEAEEt8sshM675QHF3dLzH1PJAorwoUOzv5kD7It+qDTXRQO\u002fz9W5F9MnA3ttCg+Jf5cAjWTiYP8bywJu2kXx7VPrAxYVoGk1TAcEHAoRRY9sFwWW4BQ92QgrB"},"type":"scatter"},{"hoverinfo":"skip","line":{"width":0},"mode":"lines","showlegend":false,"x":{"dtype":"i1","bdata":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwd"},"y":{"dtype":"f8","bdata":"YgzAfzTzKEH16kmwyZkpQey0LT3xTCpBkA+RcH3OKkHaFzJGMVYrQXFyI3uGwytB6i\u002fbCJQ0LEHLo7mPO9gsQbaz5jkkSC1BX0MctBu2LUEQf7k53FkuQVbjVgHhyS5B1NG3b5tKL0FNqsr82q4vQZGLMWaJEDBBidywhrReMEFLS6MPxJgwQWl7dHDJvjBBvUgW04P3MEEWGdeKb0QxQefJ9e6DfDFBu54Ym1bXMUHCFr9vth0yQQqknGX2RDJBfHJCN3KYMkGMQtPUIsIyQY\u002feaB7ICTNBXxMEDQtPM0HExte6O4IzQaRN2pdzxzNB"},"type":"scatter"},{"fill":"tonexty","fillcolor":"rgba(68, 138, 255, 0.3)","hovertemplate":"Year %{x}\u003cbr\u003e25th-75th: $%{y:,.0f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"width":0},"mode":"lines","name":"25th-75th percentile","x":{"dtype":"i1","bdata":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwd"},"y":{"dtype":"f8","bdata":"hPMT0Ec3JUHQzPRrXyAkQSgr3VqtYCNBDrFv8fzTIkGwpICWAS4iQTLvruRCqiFB2o5izFkcIUGSEKscVowgQTMo\u002fDXoCCBBIuN6cH8EH0H0XY8gdiIeQdaH\u002ffYBBR1BKjBCEhivG0EONJsgzWgaQeuanPETMRlBnc9XcMUGGEENeUpMX9YWQSIB0x9DnxVBWJM8iJVsFEGhq1jyfwcTQdjlgZ9R0RFBpc797ANxEEHsu\u002fN+FSEOQQ5YK8oL+gpBPkh8mhcDCEFWB2se1A8FQbK2DgJMzgFB5wmxhhn6\u002fEDF43vix0b2QEAmpEr+Xu5A"},"type":"scatter"},{"hovertemplate":"Year %{x}\u003cbr\u003eMedian: $%{y:,.0f}\u003cextra\u003e\u003c\u002fextra\u003e","line":{"color":"rgb(31, 119, 180)","width":2},"mode":"lines","name":"Median (50th percentile)","x":{"dtype":"i1","bdata":"AAECAwQFBgcICQoLDA0ODxAREhMUFRYXGBkaGxwd"},"y":{"dtype":"f8","bdata":"GIINLYXFJkHU377GCsQmQc2rrrtQuyZBrK5TWM6XJkG6Vs03M3EmQfAtfGhwTSZBfNwrILgrJkEI51l19CsmQY\u002fBQXwbAiZBpblfjpTRJUHBU8NSbXslQQjjw7vgYCVBju1zz8EoJUHiY5ILX8ckQbBTxEXpniRBrPhVaO1tJEHSR2Lh3EUkQXoHK5voFSRByIsuok3WI0GWvU5+FngjQUm1ybcYKiNB4v0h95HWIkHQorK7Z5wiQZBnhtd9SCJBRUy4FgzoIUHoTZPlV3ohQT4vGrxpLCFBHiwWzAu+IEGhiN+cxHcgQbRT3\u002fvm\u002fx9B"},"type":"scatter"}],                        {"template":{"data":{"barpolar":[{"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"white","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"#C8D4E3","linecolor":"#C8D4E3","minorgridcolor":"#C8D4E3","startlinecolor":"#2a3f5f"},"type":"carpet"}],"choropleth":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"choropleth"}],"contourcarpet":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"contourcarpet"}],"contour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"contour"}],"heatmap":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"heatmap"}],"histogram2dcontour":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2dcontour"}],"histogram2d":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"histogram2d"}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"mesh3d":[{"colorbar":{"outlinewidth":0,"ticks":""},"type":"mesh3d"}],"parcoords":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"parcoords"}],"pie":[{"automargin":true,"type":"pie"}],"scatter3d":[{"line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatter3d"}],"scattercarpet":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattercarpet"}],"scattergeo":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergeo"}],"scattergl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattergl"}],"scattermapbox":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermapbox"}],"scattermap":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scattermap"}],"scatterpolargl":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolargl"}],"scatterpolar":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterpolar"}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"scatterternary":[{"marker":{"colorbar":{"outlinewidth":0,"ticks":""}},"type":"scatterternary"}],"surface":[{"colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"type":"surface"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}]},"layout":{"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"autotypenumbers":"strict","coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]],"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]},"colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"geo":{"bgcolor":"white","lakecolor":"white","landcolor":"white","showlakes":true,"showland":true,"subunitcolor":"#C8D4E3"},"hoverlabel":{"align":"left"},"hovermode":"closest","mapbox":{"style":"light"},"paper_bgcolor":"white","plot_bgcolor":"white","polar":{"angularaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""},"bgcolor":"white","radialaxis":{"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":""}},"scene":{"xaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"yaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"},"zaxis":{"backgroundcolor":"white","gridcolor":"#DFE8F3","gridwidth":2,"linecolor":"#EBF0F8","showbackground":true,"ticks":"","zerolinecolor":"#EBF0F8"}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"ternary":{"aaxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"baxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""},"bgcolor":"white","caxis":{"gridcolor":"#DFE8F3","linecolor":"#A2B1C6","ticks":""}},"title":{"x":0.05},"xaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2},"yaxis":{"automargin":true,"gridcolor":"#EBF0F8","linecolor":"#EBF0F8","ticks":"","title":{"standoff":15},"zerolinecolor":"#EBF0F8","zerolinewidth":2}}},"title":{"text":"Historical Returns\u003cbr\u003e\u003csub\u003e400.0% Withdrawal Rate\u003c\u002fsub\u003e","x":0.5,"xanchor":"center"},"legend":{"yanchor":"top","y":0.99,"xanchor":"left","x":0.01},"xaxis":{"title":{"text":"Year"}},"yaxis":{"title":{"text":"Portfolio Value ($)"},"tickformat":"$,.0f"},"hovermode":"x unified","height":400,"showlegend":true},                        {"displayModeBar": false, "responsive": true}                    )                };            </script>        </div>
+</body>
+</html><div style="display:none">
+                 (one per model) showing failure rate vs withdrawal rate
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Value Over Time - Normal Distribution (4% SWR)</div>
+            <div class="chart-placeholder" id="normal-trajectory">
+                Chart: Percentile bands (10th, 25th, 50th, 75th, 90th) showing portfolio value over 30 years
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Value Over Time - Fat-Tailed Distribution (4% SWR)</div>
+            <div class="chart-placeholder" id="fattail-trajectory">
+                Chart: Percentile bands for fat-tailed model
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Value Over Time - Mean Reversion (4% SWR)</div>
+            <div class="chart-placeholder" id="meanrev-trajectory">
+                Chart: Percentile bands for mean reversion model
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Value Over Time - Historical Bootstrap (4% SWR)</div>
+            <div class="chart-placeholder" id="bootstrap-trajectory">
+                Chart: Percentile bands for historical bootstrap
+            </div>
+        </div>
+        
+        <h2>Discussion</h2>
+        
+        <h3>What This Means for Retirement Planning</h3>
+        <p>
+            [Your interpretation of results. For example:]
+        </p>
+        <p>
+            The choice of return distribution model has a [modest/significant] impact on calculated failure rates. 
+            At the traditional 4% withdrawal rate, failure rates ranged from [X%] (mean reversion) to [Y%] (fat-tailed), 
+            a difference of [Z] percentage points.
+        </p>
+        
+        <h3>Limitations</h3>
+        <ul>
+            <li>Assumes constant real withdrawal (no dynamic adjustment strategies)</li>
+            <li>Single asset allocation (60/40) - results may differ for other allocations</li>
+            <li>30-year time horizon may not apply to all retirees</li>
+            <li>Mean reversion and fat-tail models treat stocks and bonds independently (no correlation)</li>
+            <li>Assumes past return characteristics will persist into the future</li>
+        </ul>
+        
+        <h3>Future Work</h3>
+        <ul>
+            <li>Vary asset allocation across models</li>
+            <li>Test different time horizons</li>
+            <li>Incorporate inflation uncertainty</li>
+            <li>Examine dynamic withdrawal strategies</li>
+            <li>Add international diversification</li>
+        </ul>
+        
+        <h2>Conclusion</h2>
+        <p>
+            [Your conclusions based on what you find]
+        </p>
+        
+        <h2>Appendix: Technical Details</h2>
+        
+        <h3>Data Sources</h3>
+        <p>
+            Historical returns for bootstrap method sourced from [Shiller/CRSP/etc], covering the period 
+            1926-2023. Nominal returns were converted to real returns using historical CPI data.
+        </p>
+        
+        <h3>Code Availability</h3>
+        <p>
+            Full analysis code is available on GitHub: <a href="#">[Your GitHub repo]</a>
+        </p>
+        
+        <div class="footer">
+            <p>© 2026 Taylor | <a href="mailto:your.email@example.com">Contact</a></p>
+        </div>
+    </div>
+</body>
+</html>
