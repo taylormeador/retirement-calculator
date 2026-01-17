@@ -6,7 +6,7 @@ def multivariate_t_returns():
     """
     Generate samples from multivariate Student's t distribution.
     """
-    mean = [0.10, 0.05]  # stocks, bonds
+    mean = [0.07, 0.02]  # stocks, bonds
     cov = [
         [0.04, -0.002],  # 20% std for stocks, -0.2 correlation
         [-0.002, 0.0036],  # 6% std for bonds
@@ -34,7 +34,3 @@ def multivariate_t_returns():
     t_samples = t_samples + mean
 
     return t_samples
-
-
-result = multivariate_t_returns()
-breakpoint()

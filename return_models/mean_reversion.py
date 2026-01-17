@@ -25,7 +25,7 @@ def ar1_returns():
     n_years = 30
 
     # Stock parameters - mild mean reversion
-    stock_mu = 0.10
+    stock_mu = 0.07
     stock_phi = -0.3
     stock_historical_std = 0.20
     # Innovation std adjusted so unconditional variance matches historical
@@ -33,7 +33,7 @@ def ar1_returns():
     stock_sigma = stock_historical_std * np.sqrt(1 - stock_phi**2)
 
     # Bond parameters - mild mean reversion
-    bond_mu = 0.05
+    bond_mu = 0.02
     bond_phi = -0.3
     bond_historical_std = 0.06
     bond_sigma = bond_historical_std * np.sqrt(1 - bond_phi**2)
@@ -64,7 +64,3 @@ def ar1_returns():
     returns = np.column_stack([stock_returns, bond_returns])
 
     return returns
-
-
-result = ar1_returns()
-breakpoint()
