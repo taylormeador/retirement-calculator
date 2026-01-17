@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How Return Distribution Assumptions Affect Safe Withdrawal Rates</title>
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Georgia, 'Times New Roman', serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #fafafa;
+            padding: 20px;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px 60px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* Typography */
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 0.3em;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+        
+        h2 {
+            font-size: 1.6em;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: #34495e;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 0.3em;
+        }
+        
+        h3 {
+            font-size: 1.3em;
+            margin-top: 1.2em;
+            margin-bottom: 0.5em;
+            color: #34495e;
+        }
+        
+        p {
+            margin-bottom: 1em;
+            text-align: justify;
+        }
+        
+        /* Metadata */
+        .metadata {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            margin-bottom: 2em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5em 0;
+            font-size: 0.95em;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        td {
+            text-align: center;
+        }
+        
+        td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        /* Chart containers */
+        .chart {
+            margin: 2em 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .chart-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 1em;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .chart-placeholder {
+            background-color: #ecf0f1;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #95a5a6;
+            font-style: italic;
+            border-radius: 4px;
+        }
+        
+        /* Key findings box */
+        .key-findings {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 1.5em;
+            margin: 2em 0;
+        }
+        
+        .key-findings h3 {
+            margin-top: 0;
+            color: #2980b9;
+        }
+        
+        .key-findings ul {
+            margin-left: 1.5em;
+            margin-top: 0.5em;
+        }
+        
+        .key-findings li {
+            margin-bottom: 0.5em;
+        }
+        
+        /* Methodology box */
+        .methodology {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 1.5em;
+            margin: 2em 0;
+            font-size: 0.95em;
+        }
+        
+        .methodology h3 {
+            margin-top: 0;
+        }
+        
+        /* Code blocks (for parameters) */
+        code {
+            background-color: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        /* Lists */
+        ul, ol {
+            margin-left: 2em;
+            margin-bottom: 1em;
+        }
+        
+        li {
+            margin-bottom: 0.3em;
+        }
+        
+        /* Links */
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 3em;
+            padding-top: 1.5em;
+            border-top: 1px solid #ecf0f1;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 30px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            h2 {
+                font-size: 1.4em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>How Return Distribution Assumptions Affect Safe Withdrawal Rates</h1>
+        
+        <div class="metadata">
+            <p>Published: [Date] | Reading time: ~8 minutes</p>
+        </div>
+        
+        <h2>Introduction</h2>
+        <p>
+            Most retirement calculators assume that stock and bond returns follow a normal distribution. 
+            This is mathematically convenient but may not reflect reality. Markets experience crashes more 
+            often than normal distributions predict (fat tails), and returns may exhibit mean reversion 
+            (bad years followed by good years). How much do these assumptions actually matter for retirement planning?
+        </p>
+        
+        <p>
+            I compared four different approaches to modeling investment returns and calculated safe withdrawal 
+            rates for each. The results show that [your findings will go here].
+        </p>
+        
+        <div class="key-findings">
+            <h3>Key Findings</h3>
+            <ul>
+                <li>[Finding 1: e.g., "Fat-tailed returns increase failure rates by X% at the 4% withdrawal rate"]</li>
+                <li>[Finding 2: e.g., "Mean reversion reduces failure rates, suggesting higher SWRs may be safe"]</li>
+                <li>[Finding 3: e.g., "Historical bootstrap results align closely with normal distribution"]</li>
+            </ul>
+        </div>
+        
+        <h2>Methodology</h2>
+        
+        <div class="methodology">
+            <h3>Simulation Parameters</h3>
+            <p><strong>Portfolio:</strong> 60% stocks / 40% bonds</p>
+            <p><strong>Time Horizon:</strong> 30 years</p>
+            <p><strong>Returns:</strong> Real (inflation-adjusted)</p>
+            <p><strong>Simulations:</strong> 10,000 per scenario</p>
+            <p><strong>Withdrawal Rates Tested:</strong> 3.0%, 3.5%, 4.0%, 4.5%, 5.0%</p>
+            
+            <h3>Return Parameters</h3>
+            <ul>
+                <li><strong>Stocks:</strong> μ = 7% (real), σ = 20%</li>
+                <li><strong>Bonds:</strong> μ = 2% (real), σ = 6%</li>
+                <li><strong>Correlation:</strong> ρ = -0.167</li>
+            </ul>
+        </div>
+        
+        <h3>Four Return Models</h3>
+        
+        <p><strong>1. Normal Distribution (Baseline)</strong></p>
+        <p>
+            The standard assumption in most retirement calculators. Returns follow a multivariate normal 
+            distribution with parameters based on historical averages.
+        </p>
+        
+        <p><strong>2. Fat-Tailed Distribution (Student's t)</strong></p>
+        <p>
+            Uses a Student's t-distribution with 5 degrees of freedom to capture more frequent extreme events. 
+            This better reflects historical market crashes and booms that are "impossible" under normal assumptions.
+        </p>
+        
+        <p><strong>3. Mean Reversion (AR(1) Process)</strong></p>
+        <p>
+            Models returns with negative autocorrelation (φ = -0.3), meaning poor returns tend to be followed 
+            by better-than-average returns. This reflects the hypothesis that markets revert to their long-term mean.
+        </p>
+        
+        <p><strong>4. Historical Bootstrap</strong></p>
+        <p>
+            Randomly samples actual historical returns (1926-2023), preserving all empirical properties including 
+            correlation structure, fat tails, and any serial correlation present in the data.
+        </p>
+        
+        <h2>Results</h2>
+        
+        <h3>Failure Rates by Withdrawal Rate and Model</h3>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>3.0%</th>
+                    <th>3.5%</th>
+                    <th>4.0%</th>
+                    <th>4.5%</th>
+                    <th>5.0%</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Normal</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                </tr>
+                <tr>
+                    <td>Fat-Tailed (t)</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                </tr>
+                <tr>
+                    <td>Mean Reversion</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                </tr>
+                <tr>
+                    <td>Historical Bootstrap</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                    <td>[X%]</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="chart">
+            <div class="chart-title">Failure Rates Across Withdrawal Rates</div>
+            <div class="chart-placeholder" id="failure-rate-chart">
+                Chart: Line chart with 4 lines (one per model) showing failure rate vs withdrawal rate
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Value Over Time - Normal Distribution (4% SWR)</div>
+            <div class="chart-placeholder" id="normal-trajectory">
+                Chart: Percentile bands (10th, 25th, 50th, 75th, 90th) showing portfolio value over 30 years
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Value Over Time - Fat-Tailed Distribution (4% SWR)</div>
+            <div class="chart-placeholder" id="fattail-trajectory">
+                Chart: Percentile bands for fat-tailed model
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Value Over Time - Mean Reversion (4% SWR)</div>
+            <div class="chart-placeholder" id="meanrev-trajectory">
+                Chart: Percentile bands for mean reversion model
+            </div>
+        </div>
+        
+        <div class="chart">
+            <div class="chart-title">Portfolio Value Over Time - Historical Bootstrap (4% SWR)</div>
+            <div class="chart-placeholder" id="bootstrap-trajectory">
+                Chart: Percentile bands for historical bootstrap
+            </div>
+        </div>
+        
+        <h2>Discussion</h2>
+        
+        <h3>What This Means for Retirement Planning</h3>
+        <p>
+            [Your interpretation of results. For example:]
+        </p>
+        <p>
+            The choice of return distribution model has a [modest/significant] impact on calculated failure rates. 
+            At the traditional 4% withdrawal rate, failure rates ranged from [X%] (mean reversion) to [Y%] (fat-tailed), 
+            a difference of [Z] percentage points.
+        </p>
+        
+        <h3>Limitations</h3>
+        <ul>
+            <li>Assumes constant real withdrawal (no dynamic adjustment strategies)</li>
+            <li>Single asset allocation (60/40) - results may differ for other allocations</li>
+            <li>30-year time horizon may not apply to all retirees</li>
+            <li>Mean reversion and fat-tail models treat stocks and bonds independently (no correlation)</li>
+            <li>Assumes past return characteristics will persist into the future</li>
+        </ul>
+        
+        <h3>Future Work</h3>
+        <ul>
+            <li>Vary asset allocation across models</li>
+            <li>Test different time horizons</li>
+            <li>Incorporate inflation uncertainty</li>
+            <li>Examine dynamic withdrawal strategies</li>
+            <li>Add international diversification</li>
+        </ul>
+        
+        <h2>Conclusion</h2>
+        <p>
+            [Your conclusions based on what you find]
+        </p>
+        
+        <h2>Appendix: Technical Details</h2>
+        
+        <h3>Data Sources</h3>
+        <p>
+            Historical returns for bootstrap method sourced from [Shiller/CRSP/etc], covering the period 
+            1926-2023. Nominal returns were converted to real returns using historical CPI data.
+        </p>
+        
+        <h3>Code Availability</h3>
+        <p>
+            Full analysis code is available on GitHub: <a href="#">[Your GitHub repo]</a>
+        </p>
+        
+        <div class="footer">
+            <p>© 2026 Taylor | <a href="mailto:your.email@example.com">Contact</a></p>
+        </div>
+    </div>
+</body>
+</html>
