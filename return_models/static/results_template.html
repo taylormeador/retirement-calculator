@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Analysis Results</title>
+    <style>
+        body {
+            font-family: Georgia, serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 40px;
+        }
+        h3 {
+            color: #34495e;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border: 1px solid #ddd;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: bold;
+        }
+        td:first-child {
+            text-align: left;
+            font-weight: 500;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .chart-container {
+            margin: 30px 0;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        iframe {
+            border: none;
+            width: 100%;
+        }
+        .intro {
+            background-color: #e8f4f8;
+            padding: 20px;
+            border-left: 4px solid #3498db;
+            margin: 20px 0;
+        }
+        .metadata {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>How Return Distribution Assumptions Affect Safe Withdrawal Rates</h1>
+    
+    <div class="intro">
+        <p><strong>Analysis Overview:</strong> This analysis compares four different approaches to modeling investment returns 
+        and their impact on safe withdrawal rates for retirement planning.</p>
+        <ul>
+            <li><strong>Portfolio:</strong> 60% stocks / 40% bonds</li>
+            <li><strong>Time Horizon:</strong> 30 years</li>
+            <li><strong>Returns:</strong> Real (inflation-adjusted)</li>
+            <li><strong>Simulations:</strong> {{ n_samples | number_format }} per scenario</li>
+        </ul>
+    </div>
+    
+    <h2>Summary: Failure Rates by Model and Withdrawal Rate</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Model</th>
+                {% for wr in withdrawal_rates %}
+                <th>{{ (wr * 100) | round(1) }}%</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for model_name in model_names %}
+            <tr>
+                <td>{{ model_name }}</td>
+                {% for wr in withdrawal_rates %}
+                <td>{{ results[model_name][wr]['failure_rate'] | round(1) }}%</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <h2>Failure Rate Comparison Across Models</h2>
+    <div class="chart-container">
+        <iframe src="charts/failure_rate_comparison.html" height="500"></iframe>
+    </div>
+    
+    <h2>Portfolio Value Trajectories at 4% Withdrawal Rate</h2>
+    <p>These charts show the range of possible outcomes (10th-90th percentile) for a $1M portfolio with a 4% withdrawal rate under each return model.</p>
+    
+    {% for model_name, filename in percentile_charts.items() %}
+    <div class="chart-container">
+        <h3>{{ model_name }}</h3>
+        <iframe src="charts/{{ filename }}" height="450"></iframe>
+    </div>
+    {% endfor %}
+    
+    <hr style="margin: 40px 0;">
+    <div class="metadata">
+        <p>Generated with Python • Monte Carlo simulation • {{ n_samples | number_format }} iterations per scenario</p>
+    </div>
+    
+</body>
+</html>

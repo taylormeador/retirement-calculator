@@ -1,13 +1,16 @@
 import numpy as np
-import os
+from jinja2 import Environment, FileSystemLoader
 
 import models
 from monte_carlo import Simulation
-from create_charts import create_percentile_chart, create_failure_rate_comparison
+from create_html.create_charts import (
+    create_percentile_chart,
+    create_failure_rate_comparison,
+)
 
 
 def main():
-    n_samples = 10
+    n_samples = 10000
     return_models = {
         "Normal": models.normal_returns,
         "Fat-Tailed (t)": models.multivariate_t_returns,
@@ -17,13 +20,14 @@ def main():
     withdrawal_rates = [0.03, 0.035, 0.04, 0.045, 0.05]
 
     # Run all simulations
+    print("Running simulations...")
     all_results = {}
     for model_name, return_model in return_models.items():
-        print(f"\nRunning {model_name}...")
+        print(f"\n{model_name}:")
         all_results[model_name] = {}
 
         for withdrawal_rate in withdrawal_rates:
-            print(f"  {withdrawal_rate*100:.1f}% withdrawal rate...", end=" ")
+            print(f"  {withdrawal_rate*100:.1f}%...", end=" ")
 
             simulation = Simulation(return_model, withdrawal_rate)
             all_trajectories = []
@@ -43,41 +47,63 @@ def main():
                 "failure_rate": failure_rate,
             }
 
-            print(f"Failure rate: {failure_rate:.1f}%")
+            print(f"{failure_rate:.1f}%")
 
     # Generate charts
     print("\nGenerating charts...")
 
-    # Create failure rate comparison chart
-    failure_rate_data = {}
-    for model_name in return_models.keys():
-        failure_rates = [
-            all_results[model_name][wr]["failure_rate"] for wr in withdrawal_rates
-        ]
-        failure_rate_data[model_name] = failure_rates
-
+    # Failure rate comparison
+    failure_rate_data = {
+        model: [all_results[model][wr]["failure_rate"] for wr in withdrawal_rates]
+        for model in return_models.keys()
+    }
     fig_comparison = create_failure_rate_comparison(failure_rate_data)
     fig_comparison.write_html(
         "return_models/static/charts/failure_rate_comparison.html"
     )
+    print("  - Failure rate comparison")
 
-    # Create percentile charts for each model at 4% withdrawal rate
+    # Percentile charts at 4%
+    percentile_charts = {}
     for model_name in return_models.keys():
         trajectories = all_results[model_name][0.04]["trajectories"]
         fig = create_percentile_chart(trajectories, model_name, 0.04)
-        filename = f"return_models/static/charts/{model_name.lower().replace(' ', '_').replace('(', '').replace(')', '')}_4pct.html"
-        fig.write_html(filename)
 
-    # Print summary table
+        filename = f"{model_name.lower().replace(' ', '_').replace('(', '').replace(')', '')}_4pct.html"
+        fig.write_html(f"return_models/static/charts/{filename}")
+        percentile_charts[model_name] = filename
+        print(f"  - {model_name}")
+
+    print("\nGenerating HTML page...")
+    env = Environment(loader=FileSystemLoader("."))
+
+    def number_format(value):
+        return f"{value:,}"
+
+    env.filters["number_format"] = number_format
+
+    template = env.get_template("return_models/static/results_template.html")
+
+    html = template.render(
+        n_samples=n_samples,
+        withdrawal_rates=withdrawal_rates,
+        model_names=list(return_models.keys()),
+        results=all_results,
+        percentile_charts=percentile_charts,
+    )
+
+    with open("return_models/static/results.html", "w") as f:
+        f.write(html)
+
+    # Print summary
     print("\n" + "=" * 70)
-    print("SUMMARY TABLE - Failure Rates (%)")
+    print("SUMMARY - Failure Rates (%)")
     print("=" * 70)
     print(f"{'Model':<25} ", end="")
     for wr in withdrawal_rates:
         print(f"{wr*100:>6.1f}%", end=" ")
     print()
     print("-" * 70)
-
     for model_name in return_models.keys():
         print(f"{model_name:<25} ", end="")
         for wr in withdrawal_rates:
@@ -85,6 +111,9 @@ def main():
             print(f"{fr:>6.1f}%", end=" ")
         print()
     print("=" * 70)
+
+    print("\n✓ Generated: return_models/static/results.html")
+    print("  Open this file in your browser to see all results!\n")
 
 
 if __name__ == "__main__":
